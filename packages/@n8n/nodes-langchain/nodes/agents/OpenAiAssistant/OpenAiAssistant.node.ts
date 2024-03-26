@@ -1,7 +1,6 @@
 import { AgentExecutor } from 'langchain/agents';
 import { OpenAI as OpenAIClient } from 'openai';
 import { OpenAIAssistantRunnable } from 'langchain/experimental/openai_assistant';
-import { type Tool } from 'langchain/tools';
 import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 import type {
 	IExecuteFunctions,
@@ -10,15 +9,17 @@ import type {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import type { OpenAIToolType } from 'langchain/dist/experimental/openai_assistant/schema';
+import { getConnectedTools } from '../../../utils/helpers';
 import { formatToOpenAIAssistantTool } from './utils';
 
 export class OpenAiAssistant implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'OpenAI Assistant',
 		name: 'openAiAssistant',
+		hidden: true,
 		icon: 'fa:robot',
 		group: ['transform'],
-		version: 1,
+		version: [1, 1.1],
 		description: 'Utilizes Assistant API from Open AI.',
 		subtitle: 'Open AI Assistant',
 		defaults: {
@@ -224,6 +225,23 @@ export class OpenAiAssistant implements INodeType {
 				type: 'string',
 				required: true,
 				default: '={{ $json.chat_input }}',
+				displayOptions: {
+					show: {
+						'@version': [1],
+					},
+				},
+			},
+			{
+				displayName: 'Text',
+				name: 'text',
+				type: 'string',
+				required: true,
+				default: '={{ $json.chatInput }}',
+				displayOptions: {
+					show: {
+						'@version': [1.1],
+					},
+				},
 			},
 			{
 				displayName: 'OpenAI Tools',
@@ -293,7 +311,8 @@ export class OpenAiAssistant implements INodeType {
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const tools = (await this.getInputConnectionData(NodeConnectionType.AiTool, 0)) as Tool[];
+		const nodeVersion = this.getNode().typeVersion;
+		const tools = await getConnectedTools(this, nodeVersion > 1);
 		const credentials = await this.getCredentials('openAiApi');
 
 		const items = this.getInputData();
@@ -363,6 +382,6 @@ export class OpenAiAssistant implements INodeType {
 			returnData.push({ json: response });
 		}
 
-		return this.prepareOutputData(returnData);
+		return await this.prepareOutputData(returnData);
 	}
 }

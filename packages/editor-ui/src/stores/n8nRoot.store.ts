@@ -7,8 +7,7 @@ const { VUE_APP_URL_BASE_API } = import.meta.env;
 
 export const useRootStore = defineStore(STORES.ROOT, {
 	state: (): RootState => ({
-		baseUrl:
-			VUE_APP_URL_BASE_API ?? (window.BASE_PATH === '/{{BASE_PATH}}/' ? '/' : window.BASE_PATH),
+		baseUrl: VUE_APP_URL_BASE_API ?? window.BASE_PATH,
 		restEndpoint:
 			!window.REST_ENDPOINT || window.REST_ENDPOINT === '{{REST_ENDPOINT}}'
 				? 'rest'
@@ -31,6 +30,7 @@ export const useRootStore = defineStore(STORES.ROOT, {
 		urlBaseEditor: 'http://localhost:5678',
 		isNpmAvailable: false,
 		instanceId: '',
+		binaryDataMode: 'default',
 	}),
 	getters: {
 		getBaseUrl(): string {
@@ -128,6 +128,9 @@ export const useRootStore = defineStore(STORES.ROOT, {
 		},
 		setIsNpmAvailable(isNpmAvailable: boolean): void {
 			this.isNpmAvailable = isNpmAvailable;
+		},
+		setBinaryDataMode(binaryDataMode: string): void {
+			this.binaryDataMode = binaryDataMode;
 		},
 	},
 });

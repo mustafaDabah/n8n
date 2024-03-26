@@ -26,7 +26,14 @@ export const tryToParseString = (value: unknown): string => {
 
 	return String(value);
 };
-
+export const tryToParseAlphanumericString = (value: unknown): string => {
+	const parsed = tryToParseString(value);
+	const regex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+	if (!regex.test(parsed)) {
+		throw new ApplicationError('Value is not a valid alphanumeric string', { extra: { value } });
+	}
+	return parsed;
+};
 export const tryToParseBoolean = (value: unknown): value is boolean => {
 	if (typeof value === 'boolean') {
 		return value;
@@ -52,6 +59,17 @@ export const tryToParseBoolean = (value: unknown): value is boolean => {
 };
 
 export const tryToParseDateTime = (value: unknown): DateTime => {
+	if (value instanceof DateTime && value.isValid) {
+		return value;
+	}
+
+	if (value instanceof Date) {
+		const fromJSDate = DateTime.fromJSDate(value);
+		if (fromJSDate.isValid) {
+			return fromJSDate;
+		}
+	}
+
 	const dateString = String(value).trim();
 
 	// Rely on luxon to parse different date formats
@@ -70,6 +88,11 @@ export const tryToParseDateTime = (value: unknown): DateTime => {
 	const sqlDate = DateTime.fromSQL(dateString, { setZone: true });
 	if (sqlDate.isValid) {
 		return sqlDate;
+	}
+
+	const parsedDateTime = DateTime.fromMillis(Date.parse(dateString));
+	if (parsedDateTime.isValid) {
+		return parsedDateTime;
 	}
 
 	throw new ApplicationError('Value is not a valid date', { extra: { dateString } });
@@ -162,6 +185,17 @@ export const validateFieldType = (
 				return { valid: true, newValue: tryToParseString(value) };
 			} catch (e) {
 				return { valid: false, errorMessage: defaultErrorMessage };
+			}
+		}
+		case 'string-alphanumeric': {
+			try {
+				return { valid: true, newValue: tryToParseAlphanumericString(value) };
+			} catch (e) {
+				return {
+					valid: false,
+					errorMessage:
+						'Value is not a valid alphanumeric string, only letters, numbers and underscore allowed',
+				};
 			}
 		}
 		case 'number': {

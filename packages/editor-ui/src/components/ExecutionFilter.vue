@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { computed, reactive, onBeforeMount, ref } from 'vue';
-import debounce from 'lodash/debounce';
 import type {
 	ExecutionFilterType,
 	ExecutionFilterMetadata,
@@ -11,10 +10,10 @@ import TagsDropdown from '@/components/TagsDropdown.vue';
 import { getObjectKeys, isEmpty } from '@/utils/typesUtils';
 import { EnterpriseEditionFeature } from '@/constants';
 import { useSettingsStore } from '@/stores/settings.store';
-import { useUsageStore } from '@/stores/usage.store';
 import { useUIStore } from '@/stores/ui.store';
 import { useTelemetry } from '@/composables/useTelemetry';
 import type { Placement } from '@floating-ui/core';
+import { useDebounce } from '@/composables/useDebounce';
 
 export type ExecutionFilterProps = {
 	workflows?: IWorkflowShortResponse[];
@@ -25,8 +24,8 @@ export type ExecutionFilterProps = {
 const DATE_TIME_MASK = 'YYYY-MM-DD HH:mm';
 
 const settingsStore = useSettingsStore();
-const usageStore = useUsageStore();
 const uiStore = useUIStore();
+const { debounce } = useDebounce();
 
 const telemetry = useTelemetry();
 
@@ -37,7 +36,9 @@ const props = withDefaults(defineProps<ExecutionFilterProps>(), {
 const emit = defineEmits<{
 	(event: 'filterChanged', value: ExecutionFilterType): void;
 }>();
-const debouncedEmit = debounce(emit, 500);
+const debouncedEmit = debounce(emit, {
+	debounceTime: 500,
+});
 
 const isCustomDataFilterTracked = ref(false);
 const isAdvancedExecutionFilterEnabled = computed(() =>
@@ -197,7 +198,7 @@ onBeforeMount(() => {
 					:model-value="filter.tags"
 					:create-enabled="false"
 					data-test-id="executions-filter-tags-select"
-					@update:modelValue="onTagsChange"
+					@update:model-value="onTagsChange"
 				/>
 			</div>
 			<div :class="$style.group">
@@ -288,7 +289,7 @@ onBeforeMount(() => {
 							:placeholder="locale.baseText('executionsFilter.savedDataKeyPlaceholder')"
 							:model-value="filter.metadata[0]?.key"
 							data-test-id="execution-filter-saved-data-key-input"
-							@update:modelValue="onFilterMetaChange(0, 'key', $event)"
+							@update:model-value="onFilterMetaChange(0, 'key', $event)"
 						/>
 					</n8n-tooltip>
 					<label for="execution-filter-saved-data-value">{{
@@ -312,7 +313,7 @@ onBeforeMount(() => {
 							:placeholder="locale.baseText('executionsFilter.savedDataValuePlaceholder')"
 							:model-value="filter.metadata[0]?.value"
 							data-test-id="execution-filter-saved-data-value-input"
-							@update:modelValue="onFilterMetaChange(0, 'value', $event)"
+							@update:model-value="onFilterMetaChange(0, 'value', $event)"
 						/>
 					</n8n-tooltip>
 				</div>

@@ -1,7 +1,9 @@
 <template>
 	<div :class="['run-data', $style.container]" @mouseover="activatePane">
 		<n8n-callout
-			v-if="canPinData && hasPinData && !editMode.enabled && !isProductionExecutionPreview"
+			v-if="
+				canPinData && pinnedData.hasData.value && !editMode.enabled && !isProductionExecutionPreview
+			"
 			theme="secondary"
 			icon="thumbtack"
 			:class="$style.pinnedDataCallout"
@@ -54,7 +56,7 @@
 					:model-value="displayMode"
 					:options="buttons"
 					data-test-id="ndv-run-data-display-mode"
-					@update:modelValue="onDisplayModeChange"
+					@update:model-value="onDisplayModeChange"
 				/>
 				<n8n-icon-button
 					v-if="canPinData && !isReadOnlyRoute && !readOnlyEnv"
@@ -68,48 +70,24 @@
 					data-test-id="ndv-edit-pinned-data"
 					@click="enterEditMode({ origin: 'editIconButton' })"
 				/>
-				<n8n-tooltip
-					v-if="canPinData && rawInputData.length"
-					v-show="!editMode.enabled"
-					placement="bottom-end"
-					:visible="
-						isControlledPinDataTooltip
-							? isControlledPinDataTooltip && pinDataDiscoveryTooltipVisible
-							: undefined
-					"
-				>
-					<template v-if="!isControlledPinDataTooltip" #content>
-						<div :class="$style.tooltipContainer">
-							<strong>{{ $locale.baseText('ndv.pinData.pin.title') }}</strong>
-							<n8n-text size="small" tag="p">
-								{{ $locale.baseText('ndv.pinData.pin.description') }}
 
-								<n8n-link :to="dataPinningDocsUrl" size="small">
-									{{ $locale.baseText('ndv.pinData.pin.link') }}
-								</n8n-link>
-							</n8n-text>
-						</div>
-					</template>
-					<template v-else #content>
-						<div :class="$style.tooltipContainer">
-							{{ $locale.baseText('node.discovery.pinData.ndv') }}
-						</div>
-					</template>
-					<n8n-icon-button
-						:class="['ml-2xs', $style.pinDataButton]"
-						type="tertiary"
-						:active="hasPinData"
-						icon="thumbtack"
-						:disabled="
-							editMode.enabled ||
-							(rawInputData.length === 0 && !hasPinData) ||
-							isReadOnlyRoute ||
-							readOnlyEnv
-						"
-						data-test-id="ndv-pin-data"
-						@click="onTogglePinData({ source: 'pin-icon-click' })"
-					/>
-				</n8n-tooltip>
+				<RunDataPinButton
+					v-if="(canPinData || !!binaryData?.length) && rawInputData.length && !editMode.enabled"
+					:disabled="
+						(!rawInputData.length && !pinnedData.hasData.value) ||
+						isReadOnlyRoute ||
+						readOnlyEnv ||
+						!!binaryData?.length
+					"
+					:tooltip-contents-visibility="{
+						binaryDataTooltipContent: !!binaryData?.length,
+						pinDataDiscoveryTooltipContent:
+							isControlledPinDataTooltip && pinDataDiscoveryTooltipVisible,
+					}"
+					:data-pinning-docs-url="dataPinningDocsUrl"
+					:pinned-data="pinnedData"
+					@toggle-pin-data="onTogglePinData({ source: 'pin-icon-click' })"
+				/>
 
 				<div v-show="editMode.enabled" :class="$style.editModeActions">
 					<n8n-button
@@ -138,7 +116,7 @@
 					size="small"
 					:model-value="runIndex"
 					teleported
-					@update:modelValue="onRunIndexChange"
+					@update:model-value="onRunIndexChange"
 					@click.stop
 				>
 					<template #prepend>{{ $locale.baseText('ndv.output.run') }}</template>
@@ -182,7 +160,7 @@
 			<n8n-tabs
 				:model-value="currentOutputIndex"
 				:options="branches"
-				@update:modelValue="onBranchChange"
+				@update:model-value="onBranchChange"
 			/>
 			<RunDataSearch
 				v-if="showIOSearch"
@@ -195,11 +173,12 @@
 
 		<div
 			v-else-if="
+				!hasRunError &&
 				hasNodeRun &&
 				((dataCount > 0 && maxRunIndex === 0) || search) &&
 				!isArtificialRecoveredEventItem
 			"
-			v-show="!editMode.enabled"
+			v-show="!editMode.enabled && !hasRunError"
 			:class="$style.itemsCount"
 			data-test-id="ndv-items-count"
 		>
@@ -238,7 +217,7 @@
 				<div :class="[$style.editModeBody, 'ignore-key-press']">
 					<JsonEditor
 						:model-value="editMode.value"
-						@update:modelValue="ndvStore.setOutputPanelEditModeValue($event)"
+						@update:model-value="ndvStore.setOutputPanelEditModeValue($event)"
 					/>
 				</div>
 				<div :class="$style.editModeFooter">
@@ -393,8 +372,8 @@
 					:has-default-hover-state="paneType === 'input' && !search"
 					:search="search"
 					@mounted="$emit('tableMounted', $event)"
-					@activeRowChanged="onItemHover"
-					@displayModeChange="onDisplayModeChange"
+					@active-row-changed="onItemHover"
+					@display-mode-change="onDisplayModeChange"
 				/>
 			</Suspense>
 
@@ -548,7 +527,7 @@
 					size="mini"
 					:model-value="pageSize"
 					teleported
-					@update:modelValue="onPageSizeChange"
+					@update:model-value="onPageSizeChange"
 				>
 					<template #prepend>{{ $locale.baseText('ndv.output.pageSize') }}</template>
 					<n8n-option v-for="size in pageSizes" :key="size" :label="size" :value="size">
@@ -562,7 +541,7 @@
 </template>
 
 <script lang="ts">
-import { defineAsyncComponent, defineComponent } from 'vue';
+import { defineAsyncComponent, defineComponent, toRef } from 'vue';
 import type { PropType } from 'vue';
 import { mapStores } from 'pinia';
 import { useStorage } from '@/composables/useStorage';
@@ -605,9 +584,8 @@ import BinaryDataDisplay from '@/components/BinaryDataDisplay.vue';
 import NodeErrorView from '@/components/Error/NodeErrorView.vue';
 import JsonEditor from '@/components/JsonEditor/JsonEditor.vue';
 
-import { genericHelpers } from '@/mixins/genericHelpers';
-import { pinData } from '@/mixins/pinData';
-import type { PinDataSource } from '@/mixins/pinData';
+import type { PinDataSource } from '@/composables/usePinnedData';
+import { usePinnedData } from '@/composables/usePinnedData';
 import { dataPinningEventBus } from '@/event-bus';
 import { clearJsonKey, isEmpty } from '@/utils/typesUtils';
 import { executionDataToJson } from '@/utils/nodeTypesUtils';
@@ -617,14 +595,23 @@ import { useNDVStore } from '@/stores/ndv.store';
 import { useNodeTypesStore } from '@/stores/nodeTypes.store';
 import { useNodeHelpers } from '@/composables/useNodeHelpers';
 import { useToast } from '@/composables/useToast';
-import { isObject } from 'lodash-es';
+import { isEqual, isObject } from 'lodash-es';
 import { useExternalHooks } from '@/composables/useExternalHooks';
+import { useSourceControlStore } from '@/stores/sourceControl.store';
+import { useRootStore } from '@/stores/n8nRoot.store';
+import RunDataPinButton from '@/components/RunDataPinButton.vue';
 
-const RunDataTable = defineAsyncComponent(async () => import('@/components/RunDataTable.vue'));
-const RunDataJson = defineAsyncComponent(async () => import('@/components/RunDataJson.vue'));
-const RunDataSchema = defineAsyncComponent(async () => import('@/components/RunDataSchema.vue'));
-const RunDataHtml = defineAsyncComponent(async () => import('@/components/RunDataHtml.vue'));
-const RunDataSearch = defineAsyncComponent(async () => import('@/components/RunDataSearch.vue'));
+const RunDataTable = defineAsyncComponent(
+	async () => await import('@/components/RunDataTable.vue'),
+);
+const RunDataJson = defineAsyncComponent(async () => await import('@/components/RunDataJson.vue'));
+const RunDataSchema = defineAsyncComponent(
+	async () => await import('@/components/RunDataSchema.vue'),
+);
+const RunDataHtml = defineAsyncComponent(async () => await import('@/components/RunDataHtml.vue'));
+const RunDataSearch = defineAsyncComponent(
+	async () => await import('@/components/RunDataSearch.vue'),
+);
 
 export type EnterEditModeArgs = {
 	origin: 'editIconButton' | 'insertTestDataLink';
@@ -641,11 +628,12 @@ export default defineComponent({
 		RunDataSchema,
 		RunDataHtml,
 		RunDataSearch,
+		RunDataPinButton,
 	},
-	mixins: [genericHelpers, pinData],
 	props: {
-		nodeUi: {
+		node: {
 			type: Object as PropType<INodeUi>,
+			default: null,
 		},
 		runIndex: {
 			type: Number,
@@ -674,6 +662,7 @@ export default defineComponent({
 		},
 		paneType: {
 			type: String as PropType<NodePanelType>,
+			required: true,
 		},
 		overrideOutputs: {
 			type: Array as PropType<number[]>,
@@ -697,14 +686,21 @@ export default defineComponent({
 			default: false,
 		},
 	},
-	setup() {
+	setup(props) {
+		const ndvStore = useNDVStore();
 		const nodeHelpers = useNodeHelpers();
 		const externalHooks = useExternalHooks();
+		const node = toRef(props, 'node');
+		const pinnedData = usePinnedData(node, {
+			runIndex: props.runIndex,
+			displayMode: ndvStore.getPanelDisplayMode(props.paneType),
+		});
 
 		return {
 			...useToast(),
 			externalHooks,
 			nodeHelpers,
+			pinnedData,
 		};
 	},
 	data() {
@@ -743,12 +739,41 @@ export default defineComponent({
 			this.setDisplayMode();
 			this.activatePane();
 		}
+
+		if (this.hasRunError) {
+			const error = this.workflowRunData?.[this.node.name]?.[this.runIndex]?.error;
+			const errorsToTrack = ['unknown error'];
+
+			if (error && errorsToTrack.some((e) => error.message.toLowerCase().includes(e))) {
+				this.$telemetry.track(
+					`User encountered an error: "${error.message}"`,
+					{
+						node: this.node.type,
+						errorMessage: error.message,
+						nodeVersion: this.node.typeVersion,
+						n8nVersion: this.rootStore.versionCli,
+					},
+					{
+						withPostHog: true,
+					},
+				);
+			}
+		}
 	},
 	beforeUnmount() {
 		this.hidePinDataDiscoveryTooltip();
 	},
 	computed: {
-		...mapStores(useNodeTypesStore, useNDVStore, useWorkflowsStore),
+		...mapStores(
+			useNodeTypesStore,
+			useNDVStore,
+			useWorkflowsStore,
+			useSourceControlStore,
+			useRootStore,
+		),
+		isReadOnlyRoute() {
+			return this.$route?.meta?.readOnlyCanvas === true;
+		},
 		activeNode(): INodeUi | null {
 			return this.ndvStore.activeNode;
 		},
@@ -760,9 +785,6 @@ export default defineComponent({
 		},
 		displayMode(): IRunDataDisplayMode {
 			return this.ndvStore.getPanelDisplayMode(this.paneType);
-		},
-		node(): INodeUi | null {
-			return (this.nodeUi as INodeUi | null) || null;
 		},
 		nodeType(): INodeTypeDescription | null {
 			if (this.node) {
@@ -796,7 +818,7 @@ export default defineComponent({
 			return (
 				!nonMainInputs &&
 				!this.isPaneTypeInput &&
-				this.isPinDataNodeType &&
+				this.pinnedData.isValidNodeType.value &&
 				!(this.binaryData && this.binaryData.length > 0)
 			);
 		},
@@ -832,7 +854,7 @@ export default defineComponent({
 				!this.isExecuting &&
 					this.node &&
 					((this.workflowRunData && this.workflowRunData.hasOwnProperty(this.node.name)) ||
-						this.hasPinData),
+						this.pinnedData.hasData.value),
 			);
 		},
 		isArtificialRecoveredEventItem(): boolean {
@@ -864,7 +886,9 @@ export default defineComponent({
 			return this.getDataCount(this.runIndex, this.currentOutputIndex);
 		},
 		unfilteredDataCount(): number {
-			return this.pinData ? this.pinData.length : this.rawInputData.length;
+			return this.pinnedData.data.value
+				? this.pinnedData.data.value.length
+				: this.rawInputData.length;
 		},
 		dataSizeInMB(): string {
 			return (this.dataSize / 1024 / 1000).toLocaleString();
@@ -962,11 +986,11 @@ export default defineComponent({
 					? this.$locale.baseText('ndv.search.items', {
 							adjustToNumber: totalItemsCount,
 							interpolate: { matched: itemsCount, total: totalItemsCount },
-					  })
+						})
 					: this.$locale.baseText('ndv.output.items', {
 							adjustToNumber: itemsCount,
 							interpolate: { count: itemsCount },
-					  });
+						});
 				let outputName = this.getOutputName(i);
 
 				if (`${outputName}` === `${i}`) {
@@ -1072,8 +1096,8 @@ export default defineComponent({
 			useStorage(LOCAL_STORAGE_PIN_DATA_DISCOVERY_CANVAS_FLAG).value = 'true';
 		},
 		enterEditMode({ origin }: EnterEditModeArgs) {
-			const inputData = this.pinData
-				? clearJsonKey(this.pinData)
+			const inputData = this.pinnedData.data.value
+				? clearJsonKey(this.pinnedData.data.value)
 				: executionDataToJson(this.rawInputData);
 
 			const data = inputData.length > 0 ? inputData : TEST_PIN_DATA;
@@ -1086,9 +1110,9 @@ export default defineComponent({
 				click_type: origin === 'editIconButton' ? 'button' : 'link',
 				session_id: this.sessionId,
 				run_index: this.runIndex,
-				is_output_present: this.hasNodeRun || this.hasPinData,
-				view: !this.hasNodeRun && !this.hasPinData ? 'undefined' : this.displayMode,
-				is_data_pinned: this.hasPinData,
+				is_output_present: this.hasNodeRun || this.pinnedData.hasData.value,
+				view: !this.hasNodeRun && !this.pinnedData.hasData.value ? 'undefined' : this.displayMode,
+				is_data_pinned: this.pinnedData.hasData.value,
 			});
 		},
 		onClickCancelEdit() {
@@ -1106,7 +1130,7 @@ export default defineComponent({
 			this.clearAllStickyNotifications();
 
 			try {
-				this.setPinData(this.node, clearJsonKey(value) as INodeExecutionData[], 'save-edit');
+				this.pinnedData.setData(clearJsonKey(value) as INodeExecutionData[], 'save-edit');
 			} catch (error) {
 				console.error(error);
 				return;
@@ -1135,7 +1159,7 @@ export default defineComponent({
 					node_type: this.activeNode.type,
 					session_id: this.sessionId,
 					run_index: this.runIndex,
-					view: !this.hasNodeRun && !this.hasPinData ? 'none' : this.displayMode,
+					view: !this.hasNodeRun && !this.pinnedData.hasData.value ? 'none' : this.displayMode,
 				};
 
 				void this.externalHooks.run('runData.onTogglePinData', telemetryPayload);
@@ -1144,13 +1168,13 @@ export default defineComponent({
 
 			this.nodeHelpers.updateNodeParameterIssues(this.node);
 
-			if (this.hasPinData) {
-				this.unsetPinData(this.node, source);
+			if (this.pinnedData.hasData.value) {
+				this.pinnedData.unsetData(source);
 				return;
 			}
 
 			try {
-				this.setPinData(this.node, this.rawInputData, 'pin-icon-click');
+				this.pinnedData.setData(this.rawInputData, 'pin-icon-click');
 			} catch (error) {
 				console.error(error);
 				return;
@@ -1299,16 +1323,16 @@ export default defineComponent({
 			return inputData;
 		},
 		getPinDataOrLiveData(inputData: INodeExecutionData[]): INodeExecutionData[] {
-			if (this.pinData && !this.isProductionExecutionPreview) {
-				return Array.isArray(this.pinData)
-					? this.pinData.map((value) => ({
+			if (this.pinnedData.data.value && !this.isProductionExecutionPreview) {
+				return Array.isArray(this.pinnedData.data.value)
+					? this.pinnedData.data.value.map((value) => ({
 							json: value,
-					  }))
+						}))
 					: [
 							{
-								json: this.pinData,
+								json: this.pinnedData.data.value,
 							},
-					  ];
+						];
 			}
 			return inputData;
 		},
@@ -1387,12 +1411,12 @@ export default defineComponent({
 				return;
 			} else {
 				const bufferString = 'data:' + mimeType + ';base64,' + data;
-				const blob = await fetch(bufferString).then(async (d) => d.blob());
+				const blob = await fetch(bufferString).then(async (d) => await d.blob());
 				saveAs(blob, fileName);
 			}
 		},
 		async downloadJsonData() {
-			const fileName = this.node!.name.replace(/[^\w\d]/g, '_');
+			const fileName = this.node.name.replace(/[^\w\d]/g, '_');
 			const blob = new Blob([JSON.stringify(this.rawInputData, null, 2)], {
 				type: 'application/json',
 			});
@@ -1403,7 +1427,7 @@ export default defineComponent({
 			this.binaryDataDisplayVisible = true;
 
 			this.binaryDataDisplayData = {
-				node: this.node!.name,
+				node: this.node.name,
 				runIndex: this.runIndex,
 				outputIndex: this.currentOutputIndex,
 				index,
@@ -1476,7 +1500,8 @@ export default defineComponent({
 		},
 	},
 	watch: {
-		node() {
+		node(newNode: INodeUi, prevNode: INodeUi) {
+			if (newNode.id === prevNode.id) return;
 			this.init();
 		},
 		hasNodeRun() {
@@ -1494,9 +1519,10 @@ export default defineComponent({
 			immediate: true,
 			deep: true,
 		},
-		jsonData(value: IDataObject[]) {
+		jsonData(data: IDataObject[], prevData: IDataObject[]) {
+			if (isEqual(data, prevData)) return;
 			this.refreshDataSize();
-			this.showPinDataDiscoveryTooltip(value);
+			this.showPinDataDiscoveryTooltip(data);
 		},
 		binaryData(newData: IBinaryKeyData[], prevData: IBinaryKeyData[]) {
 			if (newData.length && !prevData.length && this.displayMode !== 'binary') {
@@ -1707,12 +1733,6 @@ export default defineComponent({
 }
 .tooltipContain {
 	max-width: 240px;
-}
-
-.pinDataButton {
-	svg {
-		transition: transform 0.3s ease;
-	}
 }
 
 .spinner {

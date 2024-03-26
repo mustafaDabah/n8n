@@ -1,27 +1,36 @@
 <template>
-	<div ref="jsonEditor" class="ph-no-capture json-editor"></div>
+	<div :class="$style.editor">
+		<div ref="jsonEditor" class="ph-no-capture json-editor"></div>
+		<slot name="suffix" />
+	</div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { autocompletion } from '@codemirror/autocomplete';
-import { indentWithTab, history, redo, undo } from '@codemirror/commands';
-import { bracketMatching, foldGutter, indentOnInput } from '@codemirror/language';
+import { history } from '@codemirror/commands';
 import { json, jsonParseLinter } from '@codemirror/lang-json';
-import { lintGutter, linter as createLinter } from '@codemirror/lint';
+import { bracketMatching, foldGutter, indentOnInput } from '@codemirror/language';
+import { linter as createLinter, lintGutter } from '@codemirror/lint';
 import type { Extension } from '@codemirror/state';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Prec } from '@codemirror/state';
 import type { ViewUpdate } from '@codemirror/view';
 import {
-	dropCursor,
 	EditorView,
+	dropCursor,
 	highlightActiveLine,
 	highlightActiveLineGutter,
 	keymap,
 	lineNumbers,
 } from '@codemirror/view';
+import { defineComponent } from 'vue';
 
 import { codeNodeEditorTheme } from '../CodeNodeEditor/theme';
+import {
+	autocompleteKeyMap,
+	enterKeyMap,
+	historyKeyMap,
+	tabKeyMap,
+} from '@/plugins/codemirror/keymap';
+import { n8nAutocompletion } from '@/plugins/codemirror/n8nLang';
 
 export default defineComponent({
 	name: 'JsonEditor',
@@ -31,6 +40,10 @@ export default defineComponent({
 			required: true,
 		},
 		isReadOnly: {
+			type: Boolean,
+			default: false,
+		},
+		fillParent: {
 			type: Boolean,
 			default: false,
 		},
@@ -57,19 +70,22 @@ export default defineComponent({
 				EditorView.lineWrapping,
 				EditorState.readOnly.of(isReadOnly),
 				EditorView.editable.of(!isReadOnly),
-				codeNodeEditorTheme({ isReadOnly, customMinHeight: this.rows }),
+				codeNodeEditorTheme({
+					isReadOnly,
+					maxHeight: this.fillParent ? '100%' : '40vh',
+					minHeight: '20vh',
+					rows: this.rows,
+				}),
 			];
 			if (!isReadOnly) {
 				extensions.push(
 					history(),
-					keymap.of([
-						indentWithTab,
-						{ key: 'Mod-z', run: undo },
-						{ key: 'Mod-Shift-z', run: redo },
-					]),
+					Prec.highest(
+						keymap.of([...tabKeyMap(), ...enterKeyMap, ...historyKeyMap, ...autocompleteKeyMap]),
+					),
 					createLinter(jsonParseLinter()),
 					lintGutter(),
-					autocompletion(),
+					n8nAutocompletion(),
 					indentOnInput(),
 					highlightActiveLine(),
 					highlightActiveLineGutter(),
@@ -93,3 +109,13 @@ export default defineComponent({
 	},
 });
 </script>
+
+<style lang="scss" module>
+.editor {
+	height: 100%;
+
+	& > div {
+		height: 100%;
+	}
+}
+</style>

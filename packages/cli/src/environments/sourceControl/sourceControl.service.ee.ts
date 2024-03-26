@@ -39,6 +39,7 @@ import { ApplicationError } from 'n8n-workflow';
 
 @Service()
 export class SourceControlService {
+	/** Path to SSH private key in filesystem. */
 	private sshKeyName: string;
 
 	private sshFolder: string;
@@ -112,7 +113,7 @@ export class SourceControlService {
 			});
 			await this.sourceControlExportService.deleteRepositoryFolder();
 			if (!options.keepKeyPair) {
-				await this.sourceControlPreferencesService.deleteKeyPairFiles();
+				await this.sourceControlPreferencesService.deleteKeyPair();
 			}
 			this.gitService.resetService();
 			return this.sourceControlPreferencesService.sourceControlPreferences;
@@ -171,7 +172,7 @@ export class SourceControlService {
 			await this.initGitService();
 		}
 		await this.gitService.fetch();
-		return this.gitService.getBranches();
+		return await this.gitService.getBranches();
 	}
 
 	async setBranch(branch: string): Promise<{ branches: string[]; currentBranch: string }> {
@@ -182,7 +183,7 @@ export class SourceControlService {
 			branchName: branch,
 			connected: branch?.length > 0,
 		});
-		return this.gitService.setBranch(branch);
+		return await this.gitService.setBranch(branch);
 	}
 
 	// will reset the branch to the remote branch and pull

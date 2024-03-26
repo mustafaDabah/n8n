@@ -1,14 +1,12 @@
 import { Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { IsNull, Not } from 'typeorm';
 import validator from 'validator';
 
+import { AuthService } from '@/auth/auth.service';
 import { Get, Post, RestController } from '@/decorators';
 import { PasswordUtility } from '@/services/password.utility';
 import { UserManagementMailer } from '@/UserManagement/email';
 import { PasswordResetRequest } from '@/requests';
-import { issueCookie } from '@/auth/jwt';
-import { isLdapEnabled } from '@/Ldap/helpers';
 import { isSamlCurrentAuthenticationMethod } from '@/sso/ssoHelpers';
 import { UserService } from '@/services/user.service';
 import { License } from '@/License';
@@ -23,6 +21,7 @@ import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { UnauthorizedError } from '@/errors/response-errors/unauthorized.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { UnprocessableRequestError } from '@/errors/response-errors/unprocessable.error';
+import { UserRepository } from '@/databases/repositories/user.repository';
 
 const throttle = rateLimit({
 	windowMs: 5 * 60 * 1000, // 5 minutes
@@ -37,11 +36,13 @@ export class PasswordResetController {
 		private readonly externalHooks: ExternalHooks,
 		private readonly internalHooks: InternalHooks,
 		private readonly mailer: UserManagementMailer,
+		private readonly authService: AuthService,
 		private readonly userService: UserService,
 		private readonly mfaService: MfaService,
 		private readonly urlService: UrlService,
 		private readonly license: License,
 		private readonly passwordUtility: PasswordUtility,
+		private readonly userRepository: UserRepository,
 	) {}
 
 	/**
@@ -49,6 +50,7 @@ export class PasswordResetController {
 	 */
 	@Post('/forgot-password', {
 		middlewares: !inTest ? [throttle] : [],
+		skipAuth: true,
 	})
 	async forgotPassword(req: PasswordResetRequest.Email) {
 		if (!this.mailer.isEmailSetUp) {
@@ -78,13 +80,7 @@ export class PasswordResetController {
 		}
 
 		// User should just be able to reset password if one is already present
-		const user = await this.userService.findOne({
-			where: {
-				email,
-				password: Not(IsNull()),
-			},
-			relations: ['authIdentities', 'globalRole'],
-		});
+		const user = await this.userRepository.findNonShellUser(email);
 
 		if (!user?.isOwner && !this.license.isWithinUsersLimit()) {
 			this.logger.debug(
@@ -116,11 +112,11 @@ export class PasswordResetController {
 			return;
 		}
 
-		if (isLdapEnabled() && ldapIdentity) {
+		if (this.license.isLdapEnabled() && ldapIdentity) {
 			throw new UnprocessableRequestError('forgotPassword.ldapUserPasswordResetUnavailable');
 		}
 
-		const url = this.userService.generatePasswordResetUrl(user);
+		const url = this.authService.generatePasswordResetUrl(user);
 
 		const { id, firstName, lastName } = user;
 		try {
@@ -155,7 +151,7 @@ export class PasswordResetController {
 	/**
 	 * Verify password reset token and user ID.
 	 */
-	@Get('/resolve-password-token')
+	@Get('/resolve-password-token', { skipAuth: true })
 	async resolvePasswordToken(req: PasswordResetRequest.Credentials) {
 		const { token } = req.query;
 
@@ -169,7 +165,7 @@ export class PasswordResetController {
 			throw new BadRequestError('');
 		}
 
-		const user = await this.userService.resolvePasswordResetToken(token);
+		const user = await this.authService.resolvePasswordResetToken(token);
 		if (!user) throw new NotFoundError('');
 
 		if (!user?.isOwner && !this.license.isWithinUsersLimit()) {
@@ -187,7 +183,7 @@ export class PasswordResetController {
 	/**
 	 * Verify password reset token and update password.
 	 */
-	@Post('/change-password')
+	@Post('/change-password', { skipAuth: true })
 	async changePassword(req: PasswordResetRequest.NewPassword, res: Response) {
 		const { token, password, mfaToken } = req.body;
 
@@ -203,7 +199,7 @@ export class PasswordResetController {
 
 		const validPassword = this.passwordUtility.validate(password);
 
-		const user = await this.userService.resolvePasswordResetToken(token);
+		const user = await this.authService.resolvePasswordResetToken(token);
 		if (!user) throw new NotFoundError('');
 
 		if (user.mfaEnabled) {
@@ -222,7 +218,7 @@ export class PasswordResetController {
 
 		this.logger.info('User password updated successfully', { userId: user.id });
 
-		await issueCookie(res, user);
+		this.authService.issueCookie(res, user);
 
 		void this.internalHooks.onUserUpdate({
 			user,

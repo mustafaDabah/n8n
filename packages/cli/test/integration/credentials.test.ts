@@ -1,28 +1,25 @@
+import { Container } from 'typedi';
 import type { SuperAgentTest } from 'supertest';
 
 import config from '@/config';
-import * as UserManagementHelpers from '@/UserManagement/UserManagementHelper';
 import type { ListQuery } from '@/requests';
-import type { Role } from '@db/entities/Role';
 import type { User } from '@db/entities/User';
+import { CredentialsRepository } from '@db/repositories/credentials.repository';
+import { SharedCredentialsRepository } from '@db/repositories/sharedCredentials.repository';
+import { License } from '@/License';
 
 import { randomCredentialPayload, randomName, randomString } from './shared/random';
 import * as testDb from './shared/testDb';
 import type { SaveCredentialFunction } from './shared/types';
 import * as utils from './shared/utils/';
 import { affixRoleToSaveCredential, shareCredentialWithUsers } from './shared/db/credentials';
-import { getCredentialOwnerRole, getGlobalMemberRole, getGlobalOwnerRole } from './shared/db/roles';
 import { createManyUsers, createUser } from './shared/db/users';
-import { CredentialsRepository } from '@db/repositories/credentials.repository';
-import Container from 'typedi';
-import { SharedCredentialsRepository } from '@db/repositories/sharedCredentials.repository';
+import { Credentials } from 'n8n-core';
 
 // mock that credentialsSharing is not enabled
-jest.spyOn(UserManagementHelpers, 'isSharingEnabled').mockReturnValue(false);
+jest.spyOn(License.prototype, 'isSharingEnabled').mockReturnValue(false);
 const testServer = utils.setupTestServer({ endpointGroups: ['credentials'] });
 
-let globalOwnerRole: Role;
-let globalMemberRole: Role;
 let owner: User;
 let member: User;
 let secondMember: User;
@@ -31,15 +28,11 @@ let authMemberAgent: SuperAgentTest;
 let saveCredential: SaveCredentialFunction;
 
 beforeAll(async () => {
-	globalOwnerRole = await getGlobalOwnerRole();
-	globalMemberRole = await getGlobalMemberRole();
-	const credentialOwnerRole = await getCredentialOwnerRole();
+	owner = await createUser({ role: 'global:owner' });
+	member = await createUser({ role: 'global:member' });
+	secondMember = await createUser({ role: 'global:member' });
 
-	owner = await createUser({ globalRole: globalOwnerRole });
-	member = await createUser({ globalRole: globalMemberRole });
-	secondMember = await createUser({ globalRole: globalMemberRole });
-
-	saveCredential = affixRoleToSaveCredential(credentialOwnerRole);
+	saveCredential = affixRoleToSaveCredential('credential:owner');
 
 	authOwnerAgent = testServer.authAgentFor(owner);
 	authMemberAgent = testServer.authAgentFor(member);
@@ -74,7 +67,7 @@ describe('GET /credentials', () => {
 
 	test('should return only own creds for member', async () => {
 		const [member1, member2] = await createManyUsers(2, {
-			globalRole: globalMemberRole,
+			role: 'global:member',
 		});
 
 		const [savedCredential1] = await Promise.all([
@@ -291,7 +284,7 @@ describe('PATCH /credentials/:id', () => {
 		expect(sharedCredential.credentials.name).toBe(patchPayload.name); // updated
 	});
 
-	test('should not update non-owned cred for owner', async () => {
+	test('should update non-owned cred for owner', async () => {
 		const savedCredential = await saveCredential(randomCredentialPayload(), { user: member });
 		const patchPayload = randomCredentialPayload();
 
@@ -299,22 +292,29 @@ describe('PATCH /credentials/:id', () => {
 			.patch(`/credentials/${savedCredential.id}`)
 			.send(patchPayload);
 
-		expect(response.statusCode).toBe(404);
+		expect(response.statusCode).toBe(200);
 
 		const credential = await Container.get(CredentialsRepository).findOneByOrFail({
 			id: savedCredential.id,
 		});
 
-		expect(credential.name).not.toBe(patchPayload.name);
-		expect(credential.type).not.toBe(patchPayload.type);
-		expect(credential.data).not.toBe(patchPayload.data);
+		expect(credential.name).toBe(patchPayload.name);
+		expect(credential.type).toBe(patchPayload.type);
+
+		const credentialObject = new Credentials(
+			{ id: credential.id, name: credential.name },
+			credential.type,
+			credential.nodesAccess,
+			credential.data,
+		);
+		expect(credentialObject.getData()).toStrictEqual(patchPayload.data);
 
 		const sharedCredential = await Container.get(SharedCredentialsRepository).findOneOrFail({
 			relations: ['credentials'],
 			where: { credentialsId: credential.id },
 		});
 
-		expect(sharedCredential.credentials.name).not.toBe(patchPayload.name); // updated
+		expect(sharedCredential.credentials.name).toBe(patchPayload.name); // updated
 	});
 
 	test('should update owned cred for member', async () => {
@@ -389,7 +389,7 @@ describe('PATCH /credentials/:id', () => {
 		expect(shellCredential.name).not.toBe(patchPayload.name); // not updated
 	});
 
-	test('should not update non-owned but shared cred for instance owner', async () => {
+	test('should update non-owned but shared cred for instance owner', async () => {
 		const savedCredential = await saveCredential(randomCredentialPayload(), { user: secondMember });
 		await shareCredentialWithUsers(savedCredential, [owner]);
 		const patchPayload = randomCredentialPayload();
@@ -398,13 +398,13 @@ describe('PATCH /credentials/:id', () => {
 			.patch(`/credentials/${savedCredential.id}`)
 			.send(patchPayload);
 
-		expect(response.statusCode).toBe(404);
+		expect(response.statusCode).toBe(200);
 
 		const shellCredential = await Container.get(CredentialsRepository).findOneByOrFail({
 			id: savedCredential.id,
 		});
 
-		expect(shellCredential.name).not.toBe(patchPayload.name); // not updated
+		expect(shellCredential.name).toBe(patchPayload.name); // updated
 	});
 
 	test('should fail with invalid inputs', async () => {

@@ -74,6 +74,7 @@ import {
 	faGraduationCap,
 	faGripLinesVertical,
 	faGripVertical,
+	faHandHoldingUsd,
 	faHandScissors,
 	faHandPointLeft,
 	faHashtag,
@@ -130,6 +131,8 @@ import {
 	faTerminal,
 	faThLarge,
 	faThumbtack,
+	faThumbsDown,
+	faThumbsUp,
 	faTimes,
 	faTimesCircle,
 	faToolbox,
@@ -151,6 +154,7 @@ import {
 	faTools,
 	faProjectDiagram,
 	faStream,
+	faPowerOff,
 } from '@fortawesome/free-solid-svg-icons';
 import { faVariable, faXmark, faVault } from './custom';
 import { faStickyNote } from '@fortawesome/free-regular-svg-icons';
@@ -234,6 +238,7 @@ export const FontAwesomePlugin: Plugin<{}> = {
 		addIcon(faGlobe);
 		addIcon(faGlobeAmericas);
 		addIcon(faGraduationCap);
+		addIcon(faHandHoldingUsd);
 		addIcon(faHandScissors);
 		addIcon(faHandPointLeft);
 		addIcon(faHashtag);
@@ -295,6 +300,8 @@ export const FontAwesomePlugin: Plugin<{}> = {
 		addIcon(faTerminal);
 		addIcon(faThLarge);
 		addIcon(faThumbtack);
+		addIcon(faThumbsDown);
+		addIcon(faThumbsUp);
 		addIcon(faTimes);
 		addIcon(faTimesCircle);
 		addIcon(faToolbox);
@@ -315,6 +322,7 @@ export const FontAwesomePlugin: Plugin<{}> = {
 		addIcon(faGem);
 		addIcon(faXmark);
 		addIcon(faDownload);
+		addIcon(faPowerOff);
 
 		app.component('FontAwesomeIcon', FontAwesomeIcon);
 	},

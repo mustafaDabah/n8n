@@ -15,7 +15,7 @@
 				color="text-dark"
 				data-test-id="credentials-label"
 			>
-				<div v-if="readonly || isReadOnlyRoute">
+				<div v-if="readonly">
 					<n8n-input
 						:model-value="getSelectedName(credentialTypeDescription.name)"
 						disabled
@@ -32,7 +32,7 @@
 						:model-value="getSelectedId(credentialTypeDescription.name)"
 						:placeholder="getSelectPlaceholder(credentialTypeDescription.name, issues)"
 						size="small"
-						@update:modelValue="
+						@update:model-value="
 							(value) =>
 								onCredentialSelected(
 									credentialTypeDescription.name,
@@ -117,7 +117,6 @@ import type {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-import { genericHelpers } from '@/mixins/genericHelpers';
 import { useNodeHelpers } from '@/composables/useNodeHelpers';
 import { useToast } from '@/composables/useToast';
 
@@ -147,7 +146,6 @@ export default defineComponent({
 	components: {
 		TitledList,
 	},
-	mixins: [genericHelpers],
 	props: {
 		readonly: {
 			type: Boolean,
@@ -371,7 +369,7 @@ export default defineComponent({
 			return issues.length && this.getSelectedName(type)
 				? this.$locale.baseText('nodeCredentials.selectedCredentialUnavailable', {
 						interpolate: { name: this.getSelectedName(type) },
-				  })
+					})
 				: this.$locale.baseText('nodeCredentials.selectCredential');
 		},
 		credentialInputWrapperStyle(credentialType: string) {

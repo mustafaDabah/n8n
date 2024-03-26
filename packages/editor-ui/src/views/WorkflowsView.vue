@@ -11,7 +11,7 @@
 		:initialize="initialize"
 		:disabled="readOnlyEnv"
 		@click:add="addWorkflow"
-		@update:filters="filters = $event"
+		@update:filters="onFiltersUpdated"
 	>
 		<template #add-button="{ disabled }">
 			<n8n-tooltip :disabled="!readOnlyEnv">
@@ -27,7 +27,13 @@
 					</n8n-button>
 				</div>
 				<template #content>
-					{{ $locale.baseText('mainSidebar.workflows.readOnlyEnv.tooltip') }}
+					<i18n-t tag="span" keypath="mainSidebar.workflows.readOnlyEnv.tooltip">
+						<template #link>
+							<a target="_blank" href="https://docs.n8n.io/source-control-environments/">
+								{{ $locale.baseText('mainSidebar.workflows.readOnlyEnv.tooltip.link') }}
+							</a>
+						</template>
+					</i18n-t>
 				</template>
 			</n8n-tooltip>
 		</template>
@@ -78,6 +84,27 @@
 					</n8n-text>
 				</div>
 				<div v-if="!readOnlyEnv" :class="['text-center', 'mt-2xl', $style.actionsContainer]">
+					<a
+						v-if="userCloudAccount?.role === 'Sales'"
+						:href="getTemplateRepositoryURL('Sales')"
+						:class="$style.emptyStateCard"
+						target="_blank"
+					>
+						<n8n-card
+							hoverable
+							data-test-id="browse-sales-templates-card"
+							@click="trackCategoryLinkClick('Sales')"
+						>
+							<n8n-icon :class="$style.emptyStateCardIcon" icon="hand-holding-usd" />
+							<n8n-text size="large" class="mt-xs" color="text-base">
+								{{
+									$locale.baseText('workflows.empty.browseTemplates', {
+										interpolate: { category: 'Sales' },
+									})
+								}}
+							</n8n-text>
+						</n8n-card>
+					</a>
 					<n8n-card
 						:class="$style.emptyStateCard"
 						hoverable
@@ -105,7 +132,7 @@
 					:placeholder="$locale.baseText('workflowOpen.filterWorkflows')"
 					:model-value="filters.tags"
 					:create-enabled="false"
-					@update:modelValue="setKeyValue('tags', $event)"
+					@update:model-value="setKeyValue('tags', $event)"
 				/>
 			</div>
 			<div class="mb-s">
@@ -119,7 +146,7 @@
 				<n8n-select
 					data-test-id="status-dropdown"
 					:model-value="filters.status"
-					@update:modelValue="setKeyValue('status', $event)"
+					@update:model-value="setKeyValue('status', $event)"
 				>
 					<n8n-option
 						v-for="option in statusFilterOptions"
@@ -148,13 +175,21 @@ import { mapStores } from 'pinia';
 import { useUIStore } from '@/stores/ui.store';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useUsersStore } from '@/stores/users.store';
+import { useTemplatesStore } from '@/stores/templates.store';
 import { useWorkflowsStore } from '@/stores/workflows.store';
 import { useCredentialsStore } from '@/stores/credentials.store';
 import { useSourceControlStore } from '@/stores/sourceControl.store';
-import { genericHelpers } from '@/mixins/genericHelpers';
 import { useTagsStore } from '@/stores/tags.store';
 
 type IResourcesListLayoutInstance = InstanceType<typeof ResourcesListLayout>;
+
+interface Filters {
+	search: string;
+	ownedBy: string;
+	sharedWith: string;
+	status: string | boolean;
+	tags: string[];
+}
 
 const StatusFilter = {
 	ACTIVE: true,
@@ -171,7 +206,6 @@ const WorkflowsView = defineComponent({
 		SuggestedTemplatesPage,
 		SuggestedTemplatesSection,
 	},
-	mixins: [genericHelpers],
 	data() {
 		return {
 			filters: {
@@ -193,7 +227,12 @@ const WorkflowsView = defineComponent({
 			useCredentialsStore,
 			useSourceControlStore,
 			useTagsStore,
+			useTemplatesStore,
+			useUsersStore,
 		),
+		readOnlyEnv(): boolean {
+			return this.sourceControlStore.preferences.branchReadOnly;
+		},
 		currentUser(): IUser {
 			return this.usersStore.currentUser || ({} as IUser);
 		},
@@ -222,6 +261,9 @@ const WorkflowsView = defineComponent({
 		suggestedTemplates() {
 			return this.uiStore.suggestedTemplates;
 		},
+		userCloudAccount() {
+			return this.usersStore.currentUserCloudInfo;
+		},
 	},
 	watch: {
 		'filters.tags'() {
@@ -245,12 +287,25 @@ const WorkflowsView = defineComponent({
 		this.sourceControlStoreUnsubscribe();
 	},
 	methods: {
+		onFiltersUpdated(filters: Filters) {
+			this.filters = filters;
+			this.saveFiltersOnQueryString();
+		},
 		addWorkflow() {
 			this.uiStore.nodeViewInitialized = false;
 			void this.$router.push({ name: VIEWS.NEW_WORKFLOW });
 
 			this.$telemetry.track('User clicked add workflow button', {
 				source: 'Workflows list',
+			});
+		},
+		getTemplateRepositoryURL(category: string) {
+			return this.templatesStore.getWebsiteCategoryURL(category);
+		},
+		trackCategoryLinkClick(category: string) {
+			this.$telemetry.track(`User clicked Browse ${category} Templates`, {
+				role: this.usersStore.currentUserCloudInfo?.role,
+				active_workflow_count: this.workflowsStore.activeWorkflows.length,
 			});
 		},
 		async initialize() {
@@ -271,18 +326,15 @@ const WorkflowsView = defineComponent({
 			filters: { tags: string[]; search: string; status: string | boolean },
 			matches: boolean,
 		): boolean {
-			this.saveFiltersOnQueryString();
-
 			if (this.settingsStore.areTagsEnabled && filters.tags.length > 0) {
 				matches =
 					matches &&
-					filters.tags.every(
-						(tag) =>
-							(resource.tags as ITag[])?.find((resourceTag) =>
-								typeof resourceTag === 'object'
-									? `${resourceTag.id}` === `${tag}`
-									: `${resourceTag}` === `${tag}`,
-							),
+					filters.tags.every((tag) =>
+						(resource.tags as ITag[])?.find((resourceTag) =>
+							typeof resourceTag === 'object'
+								? `${resourceTag.id}` === `${tag}`
+								: `${resourceTag}` === `${tag}`,
+						),
 					);
 			}
 
@@ -319,8 +371,7 @@ const WorkflowsView = defineComponent({
 			}
 
 			void this.$router.replace({
-				name: VIEWS.WORKFLOWS,
-				query,
+				query: Object.keys(query).length ? query : undefined,
 			});
 		},
 		isValidUserId(userId: string) {

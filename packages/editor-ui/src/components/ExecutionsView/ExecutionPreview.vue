@@ -80,7 +80,7 @@
 			</div>
 			<div>
 				<n8n-button
-					size="large"
+					size="medium"
 					:type="debugButtonData.type"
 					:class="{
 						[$style.debugLink]: true,
@@ -111,7 +111,7 @@
 				>
 					<span class="retry-button">
 						<n8n-icon-button
-							size="large"
+							size="medium"
 							type="tertiary"
 							:title="$locale.baseText('executionsList.retryExecution')"
 							icon="redo"
@@ -133,7 +133,7 @@
 				<n8n-icon-button
 					:title="$locale.baseText('executionDetails.deleteExecution')"
 					icon="trash"
-					size="large"
+					size="medium"
 					type="tertiary"
 					data-test-id="execution-preview-delete-button"
 					@click="onDeleteExecution"
@@ -191,11 +191,11 @@ export default defineComponent({
 				? {
 						text: this.$locale.baseText('executionsList.debug.button.copyToEditor'),
 						type: 'secondary',
-				  }
+					}
 				: {
 						text: this.$locale.baseText('executionsList.debug.button.debugInEditor'),
 						type: 'primary',
-				  };
+					};
 		},
 	},
 	methods: {

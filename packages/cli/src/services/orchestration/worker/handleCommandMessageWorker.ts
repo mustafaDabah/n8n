@@ -49,13 +49,12 @@ export function getWorkerCommandReceivedHandler(options: WorkerCommandReceivedHa
 								arch: os.arch(),
 								platform: os.platform(),
 								hostname: os.hostname(),
-								interfaces: Object.values(os.networkInterfaces()).flatMap(
-									(interfaces) =>
-										(interfaces ?? [])?.map((net) => ({
-											family: net.family,
-											address: net.address,
-											internal: net.internal,
-										})),
+								interfaces: Object.values(os.networkInterfaces()).flatMap((interfaces) =>
+									(interfaces ?? [])?.map((net) => ({
+										family: net.family,
+										address: net.address,
+										internal: net.internal,
+									})),
 								),
 								version: N8N_VERSION,
 							},
@@ -122,6 +121,13 @@ export function getWorkerCommandReceivedHandler(options: WorkerCommandReceivedHa
 						// await this.stopProcess();
 						break;
 					default:
+						if (
+							message.command === 'relay-execution-lifecycle-event' ||
+							message.command === 'clear-test-webhooks'
+						) {
+							break; // meant only for main
+						}
+
 						logger.debug(
 							// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 							`Received unknown command via channel ${COMMAND_REDIS_CHANNEL}: "${message.command}"`,

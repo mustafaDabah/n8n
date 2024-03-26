@@ -43,6 +43,7 @@ export default defineComponent({
 		},
 		sidebarMenuItems(): IMenuItem[] {
 			const menuItems: IMenuItem[] = [
+<<<<<<< HEAD
 				// {
 				// 	id: 'settings-usage-and-plan',
 				// 	icon: 'chart-bar',
@@ -51,13 +52,23 @@ export default defineComponent({
 				// 	available: this.canAccessUsageAndPlan(),
 				// 	activateOnRouteNames: [VIEWS.USAGE],
 				// },
+=======
+				{
+					id: 'settings-usage-and-plan',
+					icon: 'chart-bar',
+					label: this.$locale.baseText('settings.usageAndPlan.title'),
+					position: 'top',
+					available: this.canAccessUsageAndPlan(),
+					route: { to: { name: VIEWS.USAGE } },
+				},
+>>>>>>> upstream/master
 				{
 					id: 'settings-personal',
 					icon: 'user-circle',
 					label: this.$locale.baseText('settings.personal'),
 					position: 'top',
 					available: this.canAccessPersonalSettings(),
-					activateOnRouteNames: [VIEWS.PERSONAL_SETTINGS],
+					route: { to: { name: VIEWS.PERSONAL_SETTINGS } },
 				},
 				{
 					id: 'settings-users',
@@ -65,7 +76,7 @@ export default defineComponent({
 					label: this.$locale.baseText('settings.users'),
 					position: 'top',
 					available: this.canAccessUsersSettings(),
-					activateOnRouteNames: [VIEWS.USERS_SETTINGS],
+					route: { to: { name: VIEWS.USERS_SETTINGS } },
 				},
 				{
 					id: 'settings-api',
@@ -73,8 +84,9 @@ export default defineComponent({
 					label: this.$locale.baseText('settings.n8napi'),
 					position: 'top',
 					available: this.canAccessApiSettings(),
-					activateOnRouteNames: [VIEWS.API_SETTINGS],
+					route: { to: { name: VIEWS.API_SETTINGS } },
 				},
+<<<<<<< HEAD
 				// {
 				// 	id: 'settings-external-secrets',
 				// 	icon: 'vault',
@@ -128,13 +140,65 @@ export default defineComponent({
 				// 		hasPermission(['rbac'], { rbac: { scope: 'workersView:manage' } }),
 				// 	activateOnRouteNames: [VIEWS.WORKER_VIEW],
 				// },
+=======
+				{
+					id: 'settings-external-secrets',
+					icon: 'vault',
+					label: this.$locale.baseText('settings.externalSecrets.title'),
+					position: 'top',
+					available: this.canAccessExternalSecrets(),
+					route: { to: { name: VIEWS.EXTERNAL_SECRETS_SETTINGS } },
+				},
+				{
+					id: 'settings-audit-logs',
+					icon: 'clipboard-list',
+					label: this.$locale.baseText('settings.auditLogs.title'),
+					position: 'top',
+					available: this.canAccessAuditLogs(),
+					route: { to: { name: VIEWS.AUDIT_LOGS } },
+				},
+				{
+					id: 'settings-source-control',
+					icon: 'code-branch',
+					label: this.$locale.baseText('settings.sourceControl.title'),
+					position: 'top',
+					available: this.canAccessSourceControl(),
+					route: { to: { name: VIEWS.SOURCE_CONTROL } },
+				},
+				{
+					id: 'settings-sso',
+					icon: 'user-lock',
+					label: this.$locale.baseText('settings.sso'),
+					position: 'top',
+					available: this.canAccessSso(),
+					route: { to: { name: VIEWS.SSO_SETTINGS } },
+				},
+				{
+					id: 'settings-ldap',
+					icon: 'network-wired',
+					label: this.$locale.baseText('settings.ldap'),
+					position: 'top',
+					available: this.canAccessLdapSettings(),
+					route: { to: { name: VIEWS.LDAP_SETTINGS } },
+				},
+				{
+					id: 'settings-workersview',
+					icon: 'project-diagram',
+					label: this.$locale.baseText('mainSidebar.workersView'),
+					position: 'top',
+					available:
+						this.settingsStore.isQueueModeEnabled &&
+						hasPermission(['rbac'], { rbac: { scope: 'workersView:manage' } }),
+					route: { to: { name: VIEWS.WORKER_VIEW } },
+				},
+>>>>>>> upstream/master
 			];
 
 			for (const item of this.settingsFakeDoorFeatures) {
 				if (item.uiLocations.includes('settings')) {
 					menuItems.push({
 						id: item.id,
-						icon: item.icon || 'question',
+						icon: item.icon ?? 'question',
 						label: this.$locale.baseText(item.featureName as BaseTextKey),
 						position: 'top',
 						available: true,
@@ -143,6 +207,7 @@ export default defineComponent({
 				}
 			}
 
+<<<<<<< HEAD
 			// menuItems.push({
 			// 	id: 'settings-log-streaming',
 			// 	icon: 'sign-in-alt',
@@ -160,6 +225,25 @@ export default defineComponent({
 			// 	available: this.canAccessCommunityNodes(),
 			// 	activateOnRouteNames: [VIEWS.COMMUNITY_NODES],
 			// });
+=======
+			menuItems.push({
+				id: 'settings-log-streaming',
+				icon: 'sign-in-alt',
+				label: this.$locale.baseText('settings.log-streaming'),
+				position: 'top',
+				available: this.canAccessLogStreamingSettings(),
+				route: { to: { name: VIEWS.LOG_STREAMING_SETTINGS } },
+			});
+
+			menuItems.push({
+				id: 'settings-community-nodes',
+				icon: 'cube',
+				label: this.$locale.baseText('settings.communityNodes'),
+				position: 'top',
+				available: this.canAccessCommunityNodes(),
+				route: { to: { name: VIEWS.COMMUNITY_NODES } },
+			});
+>>>>>>> upstream/master
 
 			return menuItems;
 		},
@@ -211,51 +295,10 @@ export default defineComponent({
 		},
 		async handleSelect(key: string) {
 			switch (key) {
-				case 'settings-personal':
-					await this.navigateTo(VIEWS.PERSONAL_SETTINGS);
-					break;
-				case 'settings-users':
-					await this.navigateTo(VIEWS.USERS_SETTINGS);
-					break;
-				case 'settings-api':
-					await this.navigateTo(VIEWS.API_SETTINGS);
-					break;
-				case 'settings-ldap':
-					await this.navigateTo(VIEWS.LDAP_SETTINGS);
-					break;
-				case 'settings-log-streaming':
-					await this.navigateTo(VIEWS.LOG_STREAMING_SETTINGS);
-					break;
 				case 'users': // Fakedoor feature added via hooks when user management is disabled on cloud
 				case 'logging':
 					this.$router.push({ name: VIEWS.FAKE_DOOR, params: { featureId: key } }).catch(() => {});
 					break;
-				case 'settings-community-nodes':
-					await this.navigateTo(VIEWS.COMMUNITY_NODES);
-					break;
-				case 'settings-usage-and-plan':
-					await this.navigateTo(VIEWS.USAGE);
-					break;
-				case 'settings-sso':
-					await this.navigateTo(VIEWS.SSO_SETTINGS);
-					break;
-				case 'settings-external-secrets':
-					await this.navigateTo(VIEWS.EXTERNAL_SECRETS_SETTINGS);
-					break;
-				case 'settings-source-control':
-					if (this.$router.currentRoute.name !== VIEWS.SOURCE_CONTROL) {
-						void this.$router.push({ name: VIEWS.SOURCE_CONTROL });
-					}
-					break;
-				case 'settings-audit-logs':
-					if (this.$router.currentRoute.name !== VIEWS.AUDIT_LOGS) {
-						void this.$router.push({ name: VIEWS.AUDIT_LOGS });
-					}
-					break;
-				case 'settings-workersview': {
-					await this.navigateTo(VIEWS.WORKER_VIEW);
-					break;
-				}
 				default:
 					break;
 			}
