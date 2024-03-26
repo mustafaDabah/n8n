@@ -12,7 +12,7 @@
 		@enter="onSubmit"
 	>
 		<template #content>
-			<n8n-notice v-if="!isAdvancedPermissionsEnabled">
+			<!-- <n8n-notice v-if="!isAdvancedPermissionsEnabled">
 				<i18n-t keypath="settings.users.advancedPermissions.warning">
 					<template #link>
 						<n8n-link size="small" @click="goToUpgradeAdvancedPermissions">
@@ -20,7 +20,7 @@
 						</n8n-link>
 					</template>
 				</i18n-t>
-			</n8n-notice>
+			</n8n-notice> -->
 			<div v-if="showInviteUrls">
 				<n8n-users-list :users="invitedUsers">
 					<template #actions="{ user }">

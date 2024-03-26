@@ -56,7 +56,7 @@ export default defineComponent({
 		};
 	},
 	mounted() {
-		setPageTitle(`n8n - ${this.pageTitle}`);
+		setPageTitle(`Scratchup - ${this.pageTitle}`);
 
 		this.$telemetry.track('User viewed worker view', {
 			instance_id: this.rootStore.instanceId,

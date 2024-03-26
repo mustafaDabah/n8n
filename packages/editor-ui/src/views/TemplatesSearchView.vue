@@ -7,7 +7,7 @@
 						{{ $locale.baseText('templates.heading') }}
 					</n8n-heading>
 				</div>
-				<div :class="$style.button">
+				<!-- <div :class="$style.button">
 					<n8n-button
 						size="large"
 						type="secondary"
@@ -16,7 +16,7 @@
 						:label="$locale.baseText('templates.shareWorkflow')"
 						target="_blank"
 					/>
-				</div>
+				</div> -->
 			</div>
 		</template>
 		<template #content>
@@ -189,7 +189,7 @@ export default defineComponent({
 		},
 	},
 	async mounted() {
-		setPageTitle('n8n - Templates');
+		setPageTitle('Scratchup - Templates');
 		void this.loadCategories();
 		void this.loadWorkflowsAndCollections(true);
 		void this.usersStore.showPersonalizationSurvey();

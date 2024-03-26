@@ -62,14 +62,14 @@
 		/>
 
 		<template v-if="credentialPermissions.update">
-			<n8n-notice v-if="documentationUrl && credentialProperties.length" theme="warning">
+			<!-- <n8n-notice v-if="documentationUrl && credentialProperties.length" theme="warning">
 				{{ $locale.baseText('credentialEdit.credentialConfig.needHelpFillingOutTheseFields') }}
 				<span class="ml-4xs">
 					<n8n-link :to="documentationUrl" size="small" bold @click="onDocumentationUrlClick">
 						{{ $locale.baseText('credentialEdit.credentialConfig.openDocs') }}
 					</n8n-link>
 				</span>
-			</n8n-notice>
+			</n8n-notice> -->
 
 			<AuthTypeSelector
 				v-if="showAuthTypeSelector && isNewCredential"
@@ -127,7 +127,7 @@
 			{{ $locale.baseText('credentialEdit.credentialConfig.missingCredentialType') }}
 		</n8n-text>
 
-		<EnterpriseEdition :features="[EnterpriseEditionFeature.ExternalSecrets]">
+		<!-- <EnterpriseEdition :features="[EnterpriseEditionFeature.ExternalSecrets]">
 			<template #fallback>
 				<n8n-info-tip class="mt-s">
 					{{ $locale.baseText('credentialEdit.credentialConfig.externalSecrets') }}
@@ -136,7 +136,7 @@
 					</n8n-link>
 				</n8n-info-tip>
 			</template>
-		</EnterpriseEdition>
+		</EnterpriseEdition> -->
 	</div>
 </template>
 

@@ -24,7 +24,7 @@ export class GoogleSheetsOAuth2Api implements ICredentialType {
 		},
 		{
 			displayName:
-				'Make sure you enabled the following APIs & Services in the Google Cloud Console: Google Drive API, Google Sheets API. <a href="https://docs.n8n.io/integrations/builtin/credentials/google/oauth-generic/#scopes" target="_blank">More info</a>.',
+				'Make sure you enabled the following APIs & Services in the Google Cloud Console: Google Drive API, Google Sheets API. ',
 			name: 'notice',
 			type: 'notice',
 			default: '',

@@ -365,7 +365,7 @@ export default defineComponent({
 		};
 	},
 	mounted() {
-		setPageTitle(`n8n - ${this.pageTitle}`);
+		setPageTitle(`Scratchup - ${this.pageTitle}`);
 
 		void this.handleAutoRefreshToggle();
 		document.addEventListener('visibilitychange', this.onDocumentVisibilityChange);

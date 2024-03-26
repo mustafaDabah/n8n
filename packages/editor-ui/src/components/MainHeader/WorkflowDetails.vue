@@ -59,7 +59,7 @@
 			<span :class="`activator ${$style.group}`">
 				<WorkflowActivator :workflow-active="isWorkflowActive" :workflow-id="currentWorkflowId" />
 			</span>
-			<enterprise-edition :features="[EnterpriseEditionFeature.Sharing]">
+			<!-- <enterprise-edition :features="[EnterpriseEditionFeature.Sharing]">
 				<div :class="$style.group">
 					<CollaborationPane />
 					<n8n-button
@@ -95,7 +95,7 @@
 						</template>
 					</n8n-tooltip>
 				</template>
-			</enterprise-edition>
+			</enterprise-edition> -->
 			<div :class="$style.group">
 				<SaveButton
 					type="primary"

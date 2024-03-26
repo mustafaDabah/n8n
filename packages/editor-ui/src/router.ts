@@ -440,35 +440,35 @@ export const routes = [
 	{
 		path: '/settings',
 		component: SettingsView,
-		props: true,
+		props: true, 
 		children: [
-			{
-				path: 'usage',
-				name: VIEWS.USAGE,
-				components: {
-					settingsView: SettingsUsageAndPlan,
-				},
-				meta: {
-					middleware: ['authenticated', 'custom'],
-					middlewareOptions: {
-						custom: () => {
-							const settingsStore = useSettingsStore();
-							return !(
-								settingsStore.settings.hideUsagePage ||
-								settingsStore.settings.deployment?.type === 'cloud'
-							);
-						},
-					},
-					telemetry: {
-						pageCategory: 'settings',
-						getProperties(route: RouteLocation) {
-							return {
-								feature: 'usage',
-							};
-						},
-					},
-				},
-			},
+			// {
+			// 	path: 'usage',
+			// 	name: VIEWS.USAGE,
+			// 	components: {
+			// 		settingsView: SettingsUsageAndPlan,
+			// 	},
+			// 	meta: {
+			// 		middleware: ['authenticated', 'custom'],
+			// 		middlewareOptions: {
+			// 			custom: () => {
+			// 				const settingsStore = useSettingsStore();
+			// 				return !(
+			// 					settingsStore.settings.hideUsagePage ||
+			// 					settingsStore.settings.deployment?.type === 'cloud'
+			// 				);
+			// 			},
+			// 		},
+			// 		telemetry: {
+			// 			pageCategory: 'settings',
+			// 			getProperties(route: RouteLocation) {
+			// 				return {
+			// 					feature: 'usage',
+			// 				};
+			// 			},
+			// 		},
+			// 	},
+			// },
 			{
 				path: 'personal',
 				name: VIEWS.PERSONAL_SETTINGS,

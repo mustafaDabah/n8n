@@ -54,9 +54,9 @@ export default defineComponent({
 				return '';
 			}
 
-			if (nodeType.documentationUrl && nodeType.documentationUrl.startsWith('http')) {
-				return nodeType.documentationUrl;
-			}
+			// if (nodeType.documentationUrl && nodeType.documentationUrl.startsWith('http')) {
+			// 	return nodeType.documentationUrl;
+			// }
 
 			const utmTags =
 				'?utm_source=n8n_app&utm_medium=node_settings_modal-credential_link' +
@@ -95,11 +95,11 @@ export default defineComponent({
 				},
 			];
 			if (this.documentationUrl) {
-				options.push({
-					label: this.$locale.baseText('nodeSettings.docs'),
-					value: 'docs',
-					href: this.documentationUrl,
-				});
+				// options.push({
+					// label: this.$locale.baseText('nodeSettings.docs'),
+					// value: 'docs',
+					// href: this.documentationUrl,
+				// });
 			}
 			if (this.isCommunityNode) {
 				options.push({

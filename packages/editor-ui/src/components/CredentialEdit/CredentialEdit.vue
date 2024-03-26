@@ -85,7 +85,7 @@
 						@authTypeChanged="onAuthTypeChanged"
 					/>
 				</div>
-				<div v-else-if="activeTab === 'sharing' && credentialType" :class="$style.mainContent">
+				<!-- <div v-else-if="activeTab === 'sharing' && credentialType" :class="$style.mainContent">
 					<CredentialSharing
 						:credential="currentCredential"
 						:credential-data="credentialData"
@@ -94,7 +94,7 @@
 						:modal-bus="modalBus"
 						@update:modelValue="onChangeSharedWith"
 					/>
-				</div>
+				</div> -->
 				<div v-else-if="activeTab === 'details' && credentialType" :class="$style.mainContent">
 					<CredentialInfo
 						:node-access="nodeAccess"
@@ -487,11 +487,11 @@ export default defineComponent({
 					label: this.$locale.baseText('credentialEdit.credentialEdit.connection'),
 					position: 'top',
 				},
-				{
-					id: 'sharing',
-					label: this.$locale.baseText('credentialEdit.credentialEdit.sharing'),
-					position: 'top',
-				},
+				// {
+				// 	id: 'sharing',
+				// 	label: this.$locale.baseText('credentialEdit.credentialEdit.sharing'),
+				// 	position: 'top',
+				// },
 				{
 					id: 'details',
 					label: this.$locale.baseText('credentialEdit.credentialEdit.details'),

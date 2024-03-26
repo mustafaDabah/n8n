@@ -52,9 +52,9 @@
 								? $locale.baseText('settings.personal.mfa.button.disabled.infobox')
 								: $locale.baseText('settings.personal.mfa.button.enabled.infobox')
 						}}
-						<n8n-link :to="mfaDocsUrl" size="small" :bold="true">
+						<!-- <n8n-link :to="mfaDocsUrl" size="small" :bold="true">
 							{{ $locale.baseText('generic.learnMore') }}
-						</n8n-link>
+						</n8n-link> -->
 					</n8n-text>
 				</div>
 				<n8n-button

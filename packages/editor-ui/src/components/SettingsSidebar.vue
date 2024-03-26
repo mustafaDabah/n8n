@@ -10,11 +10,11 @@
 				</div>
 			</template>
 			<template #menuSuffix>
-				<div :class="$style.versionContainer">
+				<!-- <div :class="$style.versionContainer">
 					<n8n-link size="small" @click="onVersionClick">
 						{{ $locale.baseText('settings.version') }} {{ rootStore.versionCli }}
 					</n8n-link>
-				</div>
+				</div> -->
 			</template>
 		</n8n-menu>
 	</div>
@@ -43,14 +43,14 @@ export default defineComponent({
 		},
 		sidebarMenuItems(): IMenuItem[] {
 			const menuItems: IMenuItem[] = [
-				{
-					id: 'settings-usage-and-plan',
-					icon: 'chart-bar',
-					label: this.$locale.baseText('settings.usageAndPlan.title'),
-					position: 'top',
-					available: this.canAccessUsageAndPlan(),
-					activateOnRouteNames: [VIEWS.USAGE],
-				},
+				// {
+				// 	id: 'settings-usage-and-plan',
+				// 	icon: 'chart-bar',
+				// 	label: this.$locale.baseText('settings.usageAndPlan.title'),
+				// 	position: 'top',
+				// 	available: this.canAccessUsageAndPlan(),
+				// 	activateOnRouteNames: [VIEWS.USAGE],
+				// },
 				{
 					id: 'settings-personal',
 					icon: 'user-circle',
@@ -75,59 +75,59 @@ export default defineComponent({
 					available: this.canAccessApiSettings(),
 					activateOnRouteNames: [VIEWS.API_SETTINGS],
 				},
-				{
-					id: 'settings-external-secrets',
-					icon: 'vault',
-					label: this.$locale.baseText('settings.externalSecrets.title'),
-					position: 'top',
-					available: this.canAccessExternalSecrets(),
-					activateOnRouteNames: [
-						VIEWS.EXTERNAL_SECRETS_SETTINGS,
-						VIEWS.EXTERNAL_SECRETS_PROVIDER_SETTINGS,
-					],
-				},
-				{
-					id: 'settings-audit-logs',
-					icon: 'clipboard-list',
-					label: this.$locale.baseText('settings.auditLogs.title'),
-					position: 'top',
-					available: this.canAccessAuditLogs(),
-					activateOnRouteNames: [VIEWS.AUDIT_LOGS],
-				},
-				{
-					id: 'settings-source-control',
-					icon: 'code-branch',
-					label: this.$locale.baseText('settings.sourceControl.title'),
-					position: 'top',
-					available: this.canAccessSourceControl(),
-					activateOnRouteNames: [VIEWS.SOURCE_CONTROL],
-				},
-				{
-					id: 'settings-sso',
-					icon: 'user-lock',
-					label: this.$locale.baseText('settings.sso'),
-					position: 'top',
-					available: this.canAccessSso(),
-					activateOnRouteNames: [VIEWS.SSO_SETTINGS],
-				},
-				{
-					id: 'settings-ldap',
-					icon: 'network-wired',
-					label: this.$locale.baseText('settings.ldap'),
-					position: 'top',
-					available: this.canAccessLdapSettings(),
-					activateOnRouteNames: [VIEWS.LDAP_SETTINGS],
-				},
-				{
-					id: 'settings-workersview',
-					icon: 'project-diagram',
-					label: this.$locale.baseText('mainSidebar.workersView'),
-					position: 'top',
-					available:
-						this.settingsStore.isQueueModeEnabled &&
-						hasPermission(['rbac'], { rbac: { scope: 'workersView:manage' } }),
-					activateOnRouteNames: [VIEWS.WORKER_VIEW],
-				},
+				// {
+				// 	id: 'settings-external-secrets',
+				// 	icon: 'vault',
+				// 	label: this.$locale.baseText('settings.externalSecrets.title'),
+				// 	position: 'top',
+				// 	available: this.canAccessExternalSecrets(),
+				// 	activateOnRouteNames: [
+				// 		VIEWS.EXTERNAL_SECRETS_SETTINGS,
+				// 		VIEWS.EXTERNAL_SECRETS_PROVIDER_SETTINGS,
+				// 	],
+				// },
+				// {
+				// 	id: 'settings-audit-logs',
+				// 	icon: 'clipboard-list',
+				// 	label: this.$locale.baseText('settings.auditLogs.title'),
+				// 	position: 'top',
+				// 	available: this.canAccessAuditLogs(),
+				// 	activateOnRouteNames: [VIEWS.AUDIT_LOGS],
+				// },
+				// {
+				// 	id: 'settings-source-control',
+				// 	icon: 'code-branch',
+				// 	label: this.$locale.baseText('settings.sourceControl.title'),
+				// 	position: 'top',
+				// 	available: this.canAccessSourceControl(),
+				// 	activateOnRouteNames: [VIEWS.SOURCE_CONTROL],
+				// },
+				// {
+				// 	id: 'settings-sso',
+				// 	icon: 'user-lock',
+				// 	label: this.$locale.baseText('settings.sso'),
+				// 	position: 'top',
+				// 	available: this.canAccessSso(),
+				// 	activateOnRouteNames: [VIEWS.SSO_SETTINGS],
+				// },
+				// {
+				// 	id: 'settings-ldap',
+				// 	icon: 'network-wired',
+				// 	label: this.$locale.baseText('settings.ldap'),
+				// 	position: 'top',
+				// 	available: this.canAccessLdapSettings(),
+				// 	activateOnRouteNames: [VIEWS.LDAP_SETTINGS],
+				// },
+				// {
+				// 	id: 'settings-workersview',
+				// 	icon: 'project-diagram',
+				// 	label: this.$locale.baseText('mainSidebar.workersView'),
+				// 	position: 'top',
+				// 	available:
+				// 		this.settingsStore.isQueueModeEnabled &&
+				// 		hasPermission(['rbac'], { rbac: { scope: 'workersView:manage' } }),
+				// 	activateOnRouteNames: [VIEWS.WORKER_VIEW],
+				// },
 			];
 
 			for (const item of this.settingsFakeDoorFeatures) {
@@ -143,23 +143,23 @@ export default defineComponent({
 				}
 			}
 
-			menuItems.push({
-				id: 'settings-log-streaming',
-				icon: 'sign-in-alt',
-				label: this.$locale.baseText('settings.log-streaming'),
-				position: 'top',
-				available: this.canAccessLogStreamingSettings(),
-				activateOnRouteNames: [VIEWS.LOG_STREAMING_SETTINGS],
-			});
+			// menuItems.push({
+			// 	id: 'settings-log-streaming',
+			// 	icon: 'sign-in-alt',
+			// 	label: this.$locale.baseText('settings.log-streaming'),
+			// 	position: 'top',
+			// 	available: this.canAccessLogStreamingSettings(),
+			// 	activateOnRouteNames: [VIEWS.LOG_STREAMING_SETTINGS],
+			// });
 
-			menuItems.push({
-				id: 'settings-community-nodes',
-				icon: 'cube',
-				label: this.$locale.baseText('settings.communityNodes'),
-				position: 'top',
-				available: this.canAccessCommunityNodes(),
-				activateOnRouteNames: [VIEWS.COMMUNITY_NODES],
-			});
+			// menuItems.push({
+			// 	id: 'settings-community-nodes',
+			// 	icon: 'cube',
+			// 	label: this.$locale.baseText('settings.communityNodes'),
+			// 	position: 'top',
+			// 	available: this.canAccessCommunityNodes(),
+			// 	activateOnRouteNames: [VIEWS.COMMUNITY_NODES],
+			// });
 
 			return menuItems;
 		},

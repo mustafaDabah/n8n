@@ -118,7 +118,7 @@
 						@redrawRequired="redrawRequired = true"
 						@activate="onWorkflowActivate"
 					/>
-					<a
+					<!-- <a
 						v-if="featureRequestUrl"
 						:class="$style.featureRequest"
 						target="_blank"
@@ -126,7 +126,7 @@
 					>
 						<font-awesome-icon icon="lightbulb" />
 						{{ $locale.baseText('ndv.featureRequest') }}
-					</a>
+					</a> -->
 				</template>
 			</NDVDraggablePanels>
 		</div>
